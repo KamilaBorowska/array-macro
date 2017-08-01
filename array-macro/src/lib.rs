@@ -36,6 +36,6 @@ macro_rules! array {
         array![@INTERNAL move $($rest)*]
     };
     [$expr:expr; $count:tt] => {
-        array![@INTERNAL |_| $expr; $count]
+        array![|_| $expr; $count]
     };
 }
