@@ -2,7 +2,6 @@
 extern crate proc_macro_hack;
 
 proc_macro_expr_impl! {
-    /// Add one to an expression.
     pub fn internal_array_impl(input: &str) -> String {
         let mut parts = input.splitn(2, ' ');
         let count = parts.next().unwrap().parse().unwrap();
