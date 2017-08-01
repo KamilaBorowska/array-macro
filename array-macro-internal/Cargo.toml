@@ -1,0 +1,10 @@
+[package]
+name = "array-macro-internal"
+version = "0.1.0"
+authors = ["Konrad Borowski <xfix@protonmail.com>"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro-hack = "0.3.3"
