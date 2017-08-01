@@ -1,3 +1,20 @@
+//! Array multiple elements constructor syntax.
+//!
+//! While Rust does provide those, they require copy, and you cannot obtain the
+//! index that will be created. This crate provides syntax that fixes both of
+//! those issues.
+//!
+//! # Examples
+//!
+//! ```
+//! # #[macro_use]
+//! # extern crate array_macro;
+//! # fn main() {
+//! assert_eq!(array!["string"; 3], ["string", "string", "string"]);
+//! assert_eq!(array![|x| x; 3], [0, 1, 2]);
+//! # }
+//! ```
+
 #[macro_use]
 extern crate proc_macro_hack;
 
