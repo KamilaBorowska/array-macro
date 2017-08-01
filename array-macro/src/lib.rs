@@ -31,6 +31,10 @@ proc_macro_expr_decl!(#[doc(hidden)] __internal_array! => internal_array_impl);
 /// This macro provides a way to repeat the same macro element multiple times
 /// without requiring `Copy` implementation.
 ///
+/// It's possible to define a callback by starting expression with `|` or `move`. As
+/// every closure is it own unique type, it is not possible to have an array of
+/// closures, so this syntax was reused for creating arrays with known indexes.
+///
 /// # Examples
 ///
 /// ```
