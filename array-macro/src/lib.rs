@@ -4,9 +4,10 @@ extern crate proc_macro_hack;
 #[allow(unused_imports)]
 #[macro_use]
 extern crate array_macro_internal;
+#[doc(hidden)]
 pub use array_macro_internal::*;
 
-proc_macro_expr_decl!(__internal_array! => internal_array_impl);
+proc_macro_expr_decl!(#[doc(hidden)] __internal_array! => internal_array_impl);
 
 #[macro_export]
 macro_rules! array {
