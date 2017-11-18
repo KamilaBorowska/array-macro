@@ -76,7 +76,7 @@ macro_rules! array {
                 }
             } else {
                 for (i, elem) in arr.iter_mut().enumerate() {
-                    *elem = callback(i);
+                    ::array_macro::__core::ptr::write(elem, callback(i));
                 }
             }
             ::array_macro::__core::mem::ManuallyDrop::into_inner(arr)
