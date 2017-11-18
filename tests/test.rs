@@ -28,3 +28,10 @@ fn mutability() {
         [2, 3, 4]
     );
 }
+
+
+
+#[test]
+fn big_array() {
+    assert_eq!(&array!["x"; 333] as &[_], &["x"; 333] as &[_]);
+}
