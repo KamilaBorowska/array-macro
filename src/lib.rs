@@ -64,8 +64,9 @@ macro_rules! array {
                 ::array_macro::__core::mem::needs_drop::<T>()
             }
             let arr: [_; $count] = ::array_macro::__core::mem::uninitialized();
+            let needs_drop = needs_drop(&arr);
             let mut arr = ::array_macro::__core::mem::ManuallyDrop::new(arr);
-            if needs_drop(&arr) {
+            if needs_drop {
                 {
                     let mut vec = ArrayVec { slice: &mut *arr, position: 0 };
                     for (i, elem) in vec.slice.iter_mut().enumerate() {
