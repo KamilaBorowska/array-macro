@@ -53,7 +53,9 @@ macro_rules! array {
                 fn drop(&mut self) {
                     for i in 0..self.position {
                         unsafe {
-                            ::array_macro::__core::ptr::drop_in_place(self.slice.get_unchecked_mut(i));
+                            ::array_macro::__core::ptr::drop_in_place(
+                                self.slice.get_unchecked_mut(i)
+                            );
                         }
                     }
                 }
