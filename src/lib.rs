@@ -43,7 +43,7 @@ pub extern crate core as __core;
 macro_rules! array {
     [@INTERNAL $callback:expr; $count:expr] => {
         unsafe {
-            let mut arr = [::array_macro::__core::mem::uninitialized(); $count];
+            let mut arr: [_; $count] = ::array_macro::__core::mem::uninitialized();
             for (i, elem) in arr.iter_mut().enumerate() {
                 ::array_macro::__core::ptr::write(elem, $callback(i));
             }

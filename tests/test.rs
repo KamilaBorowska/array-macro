@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate array_macro;
 
+use std::panic::catch_unwind;
+
 #[test]
 fn simple_array() {
     assert_eq!(array![3; 5], [3, 3, 3, 3, 3]);
@@ -46,4 +48,23 @@ fn macro_within_macro() {
 fn const_expr() {
     const TWO: usize = 2;
     assert_eq!(array![|i| i; 2 + TWO], [0, 1, 2, 3]);
+}
+
+static mut CALLED_DROP: bool = false;
+
+#[test]
+fn panic_safety() {
+    struct DontDrop;
+    impl Drop for DontDrop {
+        fn drop(&mut self) {
+            unsafe {
+                CALLED_DROP = true;
+            }
+        }
+    }
+    fn panicky() -> DontDrop {
+        panic!();
+    }
+    assert!(catch_unwind(|| array![panicky(); 2]).is_err());
+    assert_eq!(unsafe { CALLED_DROP }, false);
 }
