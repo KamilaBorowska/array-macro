@@ -41,3 +41,9 @@ fn macro_within_macro() {
         [[(0, 0), (0, 1)], [(1, 0), (1, 1)], [(2, 0), (2, 1)]]
     );
 }
+
+#[test]
+fn const_expr() {
+    const TWO: usize = 2;
+    assert_eq!(array![|i| i; 2 + TWO], [0, 1, 2, 3]);
+}
