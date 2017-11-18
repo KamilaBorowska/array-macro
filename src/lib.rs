@@ -60,17 +60,27 @@ macro_rules! array {
                     }
                 }
             }
-            let arr: [_; $count] = ::array_macro::__core::mem::uninitialized();
-            let mut arr = ::array_macro::__core::mem::ManuallyDrop::new(arr);
-            {
-                let mut vec = ArrayVec { slice: &mut *arr, position: 0 };
-                for (i, elem) in vec.slice.iter_mut().enumerate() {
-                    vec.position = i;
-                    ::array_macro::__core::ptr::write(elem, callback(i));
-                }
-                ::array_macro::__core::mem::forget(vec);
+            fn needs_drop<T>(_: &T) -> bool {
+                ::array_macro::__core::mem::needs_drop::<T>()
             }
-            ::array_macro::__core::mem::ManuallyDrop::into_inner(arr)
+            let mut arr: [_; $count] = ::array_macro::__core::mem::uninitialized();
+            if needs_drop(&arr) {
+                let mut arr = ::array_macro::__core::mem::ManuallyDrop::new(arr);
+                {
+                    let mut vec = ArrayVec { slice: &mut *arr, position: 0 };
+                    for (i, elem) in vec.slice.iter_mut().enumerate() {
+                        vec.position = i;
+                        ::array_macro::__core::ptr::write(elem, callback(i));
+                    }
+                    ::array_macro::__core::mem::forget(vec);
+                }
+                ::array_macro::__core::mem::ManuallyDrop::into_inner(arr)
+            } else {
+                for (i, elem) in arr.iter_mut().enumerate() {
+                    *elem = callback(i);
+                }
+                arr
+            }
         }
     }};
     [| $($rest:tt)*] => {
