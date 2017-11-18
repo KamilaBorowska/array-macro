@@ -43,10 +43,28 @@ pub extern crate core as __core;
 macro_rules! array {
     [@INTERNAL $callback:expr; $count:expr] => {
         unsafe {
+            struct ArrayVec<'a, T: 'a> {
+                slice: &'a mut [T],
+                position: usize,
+            }
+            impl<'a, T: 'a> Drop for ArrayVec<'a, T> {
+                fn drop(&mut self) {
+                    for i in 0..self.position {
+                        unsafe {
+                            ::array_macro::__core::ptr::drop_in_place(self.slice.get_unchecked_mut(i));
+                        }
+                    }
+                }
+            }
             let arr: [_; $count] = ::array_macro::__core::mem::uninitialized();
             let mut arr = ::array_macro::__core::mem::ManuallyDrop::new(arr);
-            for (i, elem) in arr.iter_mut().enumerate() {
-                ::array_macro::__core::ptr::write(elem, $callback(i));
+            {
+                let mut vec = ArrayVec { slice: &mut *arr, position: 0 };
+                for (i, elem) in vec.slice.iter_mut().enumerate() {
+                    vec.position = i;
+                    ::array_macro::__core::ptr::write(elem, $callback(i));
+                }
+                ::array_macro::__core::mem::forget(vec);
             }
             ::array_macro::__core::mem::ManuallyDrop::into_inner(arr)
         }
