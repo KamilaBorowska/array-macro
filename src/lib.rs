@@ -63,9 +63,9 @@ macro_rules! array {
             fn needs_drop<T>(_: &T) -> bool {
                 ::array_macro::__core::mem::needs_drop::<T>()
             }
-            let mut arr: [_; $count] = ::array_macro::__core::mem::uninitialized();
+            let arr: [_; $count] = ::array_macro::__core::mem::uninitialized();
+            let mut arr = ::array_macro::__core::mem::ManuallyDrop::new(arr);
             if needs_drop(&arr) {
-                let mut arr = ::array_macro::__core::mem::ManuallyDrop::new(arr);
                 {
                     let mut vec = ArrayVec { slice: &mut *arr, position: 0 };
                     for (i, elem) in vec.slice.iter_mut().enumerate() {
@@ -74,13 +74,12 @@ macro_rules! array {
                     }
                     ::array_macro::__core::mem::forget(vec);
                 }
-                ::array_macro::__core::mem::ManuallyDrop::into_inner(arr)
             } else {
                 for (i, elem) in arr.iter_mut().enumerate() {
                     *elem = callback(i);
                 }
-                arr
             }
+            ::array_macro::__core::mem::ManuallyDrop::into_inner(arr)
         }
     }};
     [| $($rest:tt)*] => {
