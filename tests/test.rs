@@ -68,3 +68,25 @@ fn panic_safety() {
     assert!(catch_unwind(|| array![panicky(); 2]).is_err());
     assert_eq!(unsafe { CALLED_DROP }, false);
 }
+
+static mut DROP_COUNT: usize = 0;
+
+#[test]
+fn panic_safety_part_two() {
+    struct DropOnlyThrice;
+    impl Drop for DropOnlyThrice {
+        fn drop(&mut self) {
+            unsafe {
+                DROP_COUNT += 1;
+            }
+        }
+    }
+    fn panicky(i: usize) -> DropOnlyThrice {
+        if i == 3 {
+            panic!();
+        }
+        DropOnlyThrice
+    }
+    assert!(catch_unwind(|| array![|i| panicky(i); 555]).is_err());
+    assert_eq!(unsafe { DROP_COUNT }, 3);
+}
