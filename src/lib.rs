@@ -17,16 +17,8 @@
 
 #![no_std]
 
-#[macro_use]
-extern crate proc_macro_hack;
-
-#[allow(unused_imports)]
-#[macro_use]
-extern crate array_macro_internal;
 #[doc(hidden)]
-pub use array_macro_internal::*;
-
-proc_macro_expr_decl!(#[doc(hidden)] __internal_array! => internal_array_impl);
+pub extern crate core as __core;
 
 /// Array constructor macro.
 ///
@@ -49,8 +41,14 @@ proc_macro_expr_decl!(#[doc(hidden)] __internal_array! => internal_array_impl);
 /// ```
 #[macro_export]
 macro_rules! array {
-    [@INTERNAL $callback:expr; $count:tt] => {
-        __internal_array!($count $callback)
+    [@INTERNAL $callback:expr; $count:expr] => {
+        unsafe {
+            let mut arr = [::array_macro::__core::mem::uninitialized(); $count];
+            for (i, elem) in arr.iter_mut().enumerate() {
+                ::array_macro::__core::ptr::write(elem, $callback(i));
+            }
+            arr
+        }
     };
     [| $($rest:tt)*] => {
         array![@INTERNAL | $($rest)*]
@@ -58,7 +56,7 @@ macro_rules! array {
     [move $($rest:tt)*] => {
         array![@INTERNAL move $($rest)*]
     };
-    [$expr:expr; $count:tt] => {
+    [$expr:expr; $count:expr] => {
         array![|_| $expr; $count]
     };
 }
