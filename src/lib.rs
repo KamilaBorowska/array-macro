@@ -41,7 +41,9 @@ pub extern crate core as __core;
 /// ```
 #[macro_export]
 macro_rules! array {
-    [@INTERNAL $callback:expr; $count:expr] => {
+    [@INTERNAL $callback:expr; $count:expr] => {{
+        #[allow(unused_mut)]
+        let mut callback = $callback;
         unsafe {
             struct ArrayVec<'a, T: 'a> {
                 slice: &'a mut [T],
@@ -62,13 +64,13 @@ macro_rules! array {
                 let mut vec = ArrayVec { slice: &mut *arr, position: 0 };
                 for (i, elem) in vec.slice.iter_mut().enumerate() {
                     vec.position = i;
-                    ::array_macro::__core::ptr::write(elem, $callback(i));
+                    ::array_macro::__core::ptr::write(elem, callback(i));
                 }
                 ::array_macro::__core::mem::forget(vec);
             }
             ::array_macro::__core::mem::ManuallyDrop::into_inner(arr)
         }
-    };
+    }};
     [| $($rest:tt)*] => {
         array![@INTERNAL | $($rest)*]
     };
