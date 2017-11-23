@@ -50,10 +50,10 @@ fn const_expr() {
     assert_eq!(array![|i| i; 2 + TWO], [0, 1, 2, 3]);
 }
 
-static mut CALLED_DROP: bool = false;
-
 #[test]
 fn panic_safety() {
+    static mut CALLED_DROP: bool = false;
+
     struct DontDrop;
     impl Drop for DontDrop {
         fn drop(&mut self) {
@@ -69,10 +69,10 @@ fn panic_safety() {
     assert_eq!(unsafe { CALLED_DROP }, false);
 }
 
-static mut DROP_COUNT: usize = 0;
-
 #[test]
 fn panic_safety_part_two() {
+    static mut DROP_COUNT: usize = 0;
+
     struct DropOnlyThrice;
     impl Drop for DropOnlyThrice {
         fn drop(&mut self) {
