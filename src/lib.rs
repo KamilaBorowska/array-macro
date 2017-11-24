@@ -10,7 +10,7 @@
 //! # #[macro_use]
 //! # extern crate array_macro;
 //! # fn main() {
-//! assert_eq!(array!["string"; 3], ["string", "string", "string"]);
+//! assert_eq!(array![String::from("x"); 2], [String::from("x"), String::from("x")]);
 //! assert_eq!(array![|x| x; 3], [0, 1, 2]);
 //! # }
 //! ```
