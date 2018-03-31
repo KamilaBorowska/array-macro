@@ -53,7 +53,7 @@ macro_rules! array {
                 fn drop(&mut self) {
                     for i in 0..self.position {
                         unsafe {
-                            ::array_macro::__core::ptr::drop_in_place(
+                            $crate::__core::ptr::drop_in_place(
                                 self.slice.get_unchecked_mut(i)
                             );
                         }
@@ -61,24 +61,24 @@ macro_rules! array {
                 }
             }
             fn needs_drop<T>(_: &T) -> bool {
-                ::array_macro::__core::mem::needs_drop::<T>()
+                $crate::__core::mem::needs_drop::<T>()
             }
-            let arr: [_; $count] = ::array_macro::__core::mem::uninitialized();
+            let arr: [_; $count] = $crate::__core::mem::uninitialized();
             let needs_drop = needs_drop(&arr);
-            let mut arr = ::array_macro::__core::mem::ManuallyDrop::new(arr);
+            let mut arr = $crate::__core::mem::ManuallyDrop::new(arr);
             if needs_drop {
                 let mut vec = ArrayVec { slice: &mut *arr, position: 0 };
                 for (i, elem) in vec.slice.iter_mut().enumerate() {
                     vec.position = i;
-                    ::array_macro::__core::ptr::write(elem, callback(i));
+                    $crate::__core::ptr::write(elem, callback(i));
                 }
-                ::array_macro::__core::mem::forget(vec);
+                $crate::__core::mem::forget(vec);
             } else {
                 for (i, elem) in arr.iter_mut().enumerate() {
-                    ::array_macro::__core::ptr::write(elem, callback(i));
+                    $crate::__core::ptr::write(elem, callback(i));
                 }
             }
-            ::array_macro::__core::mem::ManuallyDrop::into_inner(arr)
+            $crate::__core::mem::ManuallyDrop::into_inner(arr)
         }
     }};
     [| $($rest:tt)*] => {
