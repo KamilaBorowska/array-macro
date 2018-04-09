@@ -2,6 +2,7 @@
 extern crate array_macro;
 
 use std::panic::catch_unwind;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed};
 
 #[test]
 fn simple_array() {
@@ -52,33 +53,29 @@ fn const_expr() {
 
 #[test]
 fn panic_safety() {
-    static mut CALLED_DROP: bool = false;
+    static CALLED_DROP: AtomicBool = AtomicBool::new(false);
 
     struct DontDrop;
     impl Drop for DontDrop {
         fn drop(&mut self) {
-            unsafe {
-                CALLED_DROP = true;
-            }
+            CALLED_DROP.store(true, Relaxed);
         }
     }
     fn panicky() -> DontDrop {
         panic!();
     }
     assert!(catch_unwind(|| array![panicky(); 2]).is_err());
-    assert_eq!(unsafe { CALLED_DROP }, false);
+    assert_eq!(CALLED_DROP.load(Relaxed), false);
 }
 
 #[test]
 fn panic_safety_part_two() {
-    static mut DROP_COUNT: usize = 0;
+    static DROP_COUNT: AtomicUsize = AtomicUsize::new(0);
 
     struct DropOnlyThrice;
     impl Drop for DropOnlyThrice {
         fn drop(&mut self) {
-            unsafe {
-                DROP_COUNT += 1;
-            }
+            DROP_COUNT.fetch_add(1, Relaxed);
         }
     }
     fn panicky(i: usize) -> DropOnlyThrice {
@@ -88,5 +85,5 @@ fn panic_safety_part_two() {
         DropOnlyThrice
     }
     assert!(catch_unwind(|| array![|i| panicky(i); 555]).is_err());
-    assert_eq!(unsafe { DROP_COUNT }, 3);
+    assert_eq!(DROP_COUNT.load(Relaxed), 3);
 }
