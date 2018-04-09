@@ -1,6 +1,6 @@
 [package]
 name = "array-macro"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Konrad Borowski <konrad@borowski.pw>"]
 repository = "https://github.com/xfix/array-macro"
 license = "MIT/Apache-2.0"
