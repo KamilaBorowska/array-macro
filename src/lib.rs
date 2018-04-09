@@ -44,6 +44,7 @@ macro_rules! array {
     [@INTERNAL $callback:expr; $count:expr] => {{
         #[allow(unused_mut)]
         let mut callback = $callback;
+        #[allow(unsafe_code)]
         unsafe {
             struct ArrayVec<'a, T: 'a> {
                 slice: &'a mut [T],
