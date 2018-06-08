@@ -8,6 +8,3 @@ description = "Array multiple elements constructor syntax"
 keywords = ["data-structure", "no_std", "array"]
 categories = ["data-structures", "no-std"]
 documentation = "https://docs.rs/array-macro"
-
-[badges]
-travis-ci = { repository = "xfix/array-macro" }
