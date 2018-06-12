@@ -8,3 +8,7 @@ description = "Array multiple elements constructor syntax"
 keywords = ["data-structure", "no_std", "array"]
 categories = ["data-structures", "no-std"]
 documentation = "https://docs.rs/array-macro"
+
+[badges]
+gitlab = { repository = "KonradBorowski/array-macro" }
+maintenance = { status = "actively-developed" }
