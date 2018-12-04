@@ -3,6 +3,7 @@
 #[macro_use]
 extern crate array_macro;
 
+use std::fmt::Debug;
 use std::panic::catch_unwind;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed};
 
@@ -88,4 +89,22 @@ fn panic_safety_part_two() {
     }
     assert!(catch_unwind(|| array![|i| panicky(i); 555]).is_err());
     assert_eq!(DROP_COUNT.load(Relaxed), 3);
+}
+
+#[test]
+fn array_of_void() {
+    fn internal<T: Debug + Eq>(f: fn() -> T) {
+        let a: [T; 0] = array![f(); 0];
+        assert_eq!(a, []);
+    }
+    internal(|| -> ! { loop {} });
+}
+
+#[should_panic]
+#[test]
+fn array_of_void_panic_safety() {
+    fn internal<T: Debug + Eq>(f: fn() -> T) {
+        let _a: [T; 1] = array![f(); 1];
+    }
+    internal(|| -> ! { panic!() });
 }
