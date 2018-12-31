@@ -39,7 +39,7 @@ pub extern crate core as __core;
 /// assert_eq!(array![|x| x; 3], [0, 1, 2]);
 /// # }
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! array {
     [@INTERNAL $callback:expr; $count:expr] => {{
         #[allow(unused_mut)]
