@@ -20,6 +20,9 @@
 #[doc(hidden)]
 pub extern crate core as __core;
 
+#[allow(unused_imports)]
+use core::mem::MaybeUninit; // Rust 1.36+ required
+
 /// Array constructor macro.
 ///
 /// This macro provides a way to repeat the same macro element multiple times
@@ -42,45 +45,38 @@ pub extern crate core as __core;
 #[macro_export(local_inner_macros)]
 macro_rules! array {
     [@INTERNAL $callback:expr; $count:expr] => {{
-        #[allow(unused_mut)]
-        let mut callback = $callback;
-        #[allow(unsafe_code)]
-        unsafe {
-            struct ArrayVec<'a, T: 'a> {
-                slice: &'a mut [T],
-                position: usize,
-            }
-            impl<'a, T: 'a> Drop for ArrayVec<'a, T> {
-                fn drop(&mut self) {
-                    for i in 0..self.position {
-                        unsafe {
-                            $crate::__core::ptr::drop_in_place(
-                                self.slice.get_unchecked_mut(i)
-                            );
-                        }
+        let callback = $callback;
+        const COUNT: usize = $count;
+        struct ArrayVec<T> {
+            start: *mut T,
+            position: usize,
+        }
+        impl<T> Drop for ArrayVec<T> {
+            fn drop(&mut self) {
+                for i in 0..self.position {
+                    unsafe {
+                        $crate::__core::ptr::drop_in_place(self.start.add(i));
                     }
                 }
             }
-            fn needs_drop<T>(_: &T) -> bool {
-                $crate::__core::mem::needs_drop::<T>()
-            }
-            let arr: [_; $count] = $crate::__core::mem::uninitialized();
-            let needs_drop = needs_drop(&arr);
-            let mut arr = $crate::__core::mem::ManuallyDrop::new(arr);
-            if needs_drop {
-                let mut vec = ArrayVec { slice: &mut *arr, position: 0 };
-                for (i, elem) in vec.slice.iter_mut().enumerate() {
+        }
+        #[allow(unsafe_code)]
+        fn create_arr<T>(mut callback: impl FnMut(usize) -> T) -> [T; COUNT] {
+            let mut arr = $crate::__core::mem::MaybeUninit::uninit();
+            let mut vec = ArrayVec {
+                start: arr.as_mut_ptr() as *mut T,
+                position: 0,
+            };
+            unsafe {
+                for i in 0..COUNT {
                     vec.position = i;
-                    $crate::__core::ptr::write(elem, callback(i));
+                    $crate::__core::ptr::write(vec.start.add(i), callback(i));
                 }
                 $crate::__core::mem::forget(vec);
-            } else {
-                for (i, elem) in arr.iter_mut().enumerate() {
-                    $crate::__core::ptr::write(elem, callback(i));
-                }
+                arr.assume_init()
             }
-            $crate::__core::mem::ManuallyDrop::into_inner(arr)
         }
+        create_arr(callback)
     }};
     [| $($rest:tt)*] => {
         array![@INTERNAL | $($rest)*]
