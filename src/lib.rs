@@ -23,6 +23,36 @@ pub extern crate core as __core;
 #[allow(unused_imports)]
 use core::mem::MaybeUninit; // Rust 1.36+ required
 
+#[doc(hidden)]
+pub struct __ArrayVec<T> {
+    start: *mut T,
+    length: usize,
+}
+
+impl<T> __ArrayVec<T> {
+    pub fn new(start: *mut T) -> Self {
+        Self { start, length: 0 }
+    }
+
+    pub fn start(&self) -> *mut T {
+        self.start
+    }
+
+    pub fn length(&mut self) -> *mut usize {
+        &mut self.length
+    }
+}
+
+impl<T> Drop for __ArrayVec<T> {
+    fn drop(&mut self) {
+        for i in 0..self.length {
+            unsafe {
+                core::ptr::drop_in_place(self.start.add(i));
+            }
+        }
+    }
+}
+
 /// Array constructor macro.
 ///
 /// This macro provides a way to repeat the same macro element multiple times
@@ -45,38 +75,21 @@ use core::mem::MaybeUninit; // Rust 1.36+ required
 #[macro_export(local_inner_macros)]
 macro_rules! array {
     [@INTERNAL $callback:expr; $count:expr] => {{
-        let callback = $callback;
         const COUNT: usize = $count;
-        struct ArrayVec<T> {
-            start: *mut T,
-            position: usize,
-        }
-        impl<T> Drop for ArrayVec<T> {
-            fn drop(&mut self) {
-                for i in 0..self.position {
-                    unsafe {
-                        $crate::__core::ptr::drop_in_place(self.start.add(i));
-                    }
-                }
-            }
-        }
         #[allow(unsafe_code)]
         fn create_arr<T>(mut callback: impl FnMut(usize) -> T) -> [T; COUNT] {
             let mut arr = $crate::__core::mem::MaybeUninit::uninit();
-            let mut vec = ArrayVec {
-                start: arr.as_mut_ptr() as *mut T,
-                position: 0,
-            };
+            let mut vec = $crate::__ArrayVec::<T>::new(arr.as_mut_ptr() as *mut T);
             unsafe {
                 for i in 0..COUNT {
-                    vec.position = i;
-                    $crate::__core::ptr::write(vec.start.add(i), callback(i));
+                    *vec.length() = i;
+                    $crate::__core::ptr::write(vec.start().add(i), callback(i));
                 }
                 $crate::__core::mem::forget(vec);
                 arr.assume_init()
             }
         }
-        create_arr(callback)
+        create_arr($callback)
     }};
     [| $($rest:tt)*] => {
         array![@INTERNAL | $($rest)*]
