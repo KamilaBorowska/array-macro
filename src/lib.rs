@@ -81,11 +81,21 @@ macro_rules! array {
             let mut arr = $crate::__core::mem::MaybeUninit::uninit();
             let mut vec = $crate::__ArrayVec::<T>::new(arr.as_mut_ptr() as *mut T);
             unsafe {
+                // Loop invariant: vec[..vec.length] is valid
                 for i in 0..COUNT {
+                    // On the first iteration the value of `i` is `0`, making this a no-op.
+                    //
+                    // We don't need to store length for the last iteration as `vec` is
+                    // forgotten after leaving this loop.
+                    //
+                    // The value is set before writing the value to avoid need to perform
+                    // addition by 1.
                     *vec.length() = i;
                     $crate::__core::ptr::write(vec.start().add(i), callback(i));
                 }
+                // Loop escaped without panicking, avoid dropping elements.
                 $crate::__core::mem::forget(vec);
+                // All elements were written, assuming array is valid.
                 arr.assume_init()
             }
         }
