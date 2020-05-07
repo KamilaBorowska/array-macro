@@ -108,3 +108,16 @@ fn array_of_void_panic_safety() {
     }
     internal(|| -> ! { panic!() });
 }
+
+#[test]
+fn malicious_length() {
+    trait Evil {
+        fn length(&self) -> *mut usize;
+    }
+    impl<T> Evil for T {
+        fn length(&self) -> *mut usize {
+            42 as *mut usize
+        }
+    }
+    assert_eq!(array![1; 3], [1, 1, 1]);
+}

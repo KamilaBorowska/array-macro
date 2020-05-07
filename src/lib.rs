@@ -79,7 +79,7 @@ macro_rules! array {
         #[allow(unsafe_code)]
         fn create_arr<T>(mut callback: impl FnMut(usize) -> T) -> [T; COUNT] {
             let mut arr = $crate::__core::mem::MaybeUninit::uninit();
-            let mut vec = $crate::__ArrayVec::<T>::new(arr.as_mut_ptr() as *mut T);
+            let mut vec = $crate::__ArrayVec::<T>::new((&mut arr).as_mut_ptr() as *mut T);
             unsafe {
                 // Loop invariant: vec[..vec.length] is valid
                 for i in 0..COUNT {
@@ -90,8 +90,8 @@ macro_rules! array {
                     //
                     // The value is set before writing the value to avoid need to perform
                     // addition by 1.
-                    *vec.length() = i;
-                    $crate::__core::ptr::write(vec.start().add(i), callback(i));
+                    *(&mut vec).length() = i;
+                    $crate::__core::ptr::write((&vec).start().add(i), callback(i));
                 }
                 // Loop escaped without panicking, avoid dropping elements.
                 $crate::__core::mem::forget(vec);
