@@ -151,3 +151,9 @@ fn const_array() {
     const ARRAY: [u32; 4] = array![const_fn(); 4];
     assert_eq!(ARRAY, [0; 4]);
 }
+
+#[tokio::test]
+async fn await_array() {
+    let array = array![async { 42 }.await; 3];
+    assert_eq!(array, [42, 42, 42]);
+}
