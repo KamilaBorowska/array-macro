@@ -34,24 +34,38 @@ impl Token {
     }
 }
 
-/// Array constructor macro.
+/// Creates an array containing the arguments.
 ///
 /// This macro provides a way to repeat the same macro element multiple times
-/// without requiring `Copy` implementation.
+/// without requiring `Copy` implementation as array expressions require.
 ///
-/// It's possible to define a callback by prefixing an expression with
-/// `ident =>`.
+/// There are two forms of this macro.
 ///
-/// # Examples
+/// - Create an array from a given element and size. This will `Clone` the element.
 ///
-/// ```
-/// # #[macro_use]
-/// # extern crate array_macro;
-/// # fn main() {
-/// assert_eq!(array!["string"; 3], ["string", "string", "string"]);
-/// assert_eq!(array![x => x; 3], [0, 1, 2]);
-/// # }
-/// ```
+///   ```
+///   use array_macro::array;
+///   assert_eq!(array![vec![1, 2, 3]; 2], [[1, 2, 3], [1, 2, 3]]);
+///   ```
+///
+///   Unlike array expressions this syntax supports all elements which implement
+///   `Clone`.
+///
+/// - Create an array from a given expression that is based on index and size.
+///   This doesn't require the element to implement `Clone`.
+///
+///   ```
+///   use array_macro::array;
+///   assert_eq!(array![x => x * 2; 3], [0, 2, 4]);
+///   ```
+///
+///   This form can be used for declaring `const` variables.
+///
+///   ```
+///   use array_macro::array;
+///   const ARRAY: [String; 3] = array![_ => String::new(); 3];
+///   assert_eq!(ARRAY, ["", "", ""]);
+///   ```
 #[macro_export]
 macro_rules! array {
     [$expr:expr; $count:expr] => {{
