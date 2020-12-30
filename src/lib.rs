@@ -114,17 +114,21 @@ macro_rules! array {
         }
 
         #[repr(C)]
-        union Transmuter<T> {
+        union __Transmuter<T> {
             init_uninit_array: $crate::__core::mem::ManuallyDrop<$crate::__core::mem::MaybeUninit<[T; __COUNT]>>,
             uninit_array: $crate::__core::mem::ManuallyDrop<[$crate::__core::mem::MaybeUninit<T>; __COUNT]>,
+            out: $crate::__core::mem::ManuallyDrop<[T; __COUNT]>,
+        }
+
+        #[repr(C)]
+        union __ArrayVecTransmuter<T> {
             vec: $crate::__core::mem::ManuallyDrop<__ArrayVec<T>>,
             inner: $crate::__core::mem::ManuallyDrop<__ArrayVecInner<T>>,
-            out: $crate::__core::mem::ManuallyDrop<[T; __COUNT]>,
         }
 
         let mut vec = __ArrayVec(__ArrayVecInner {
             arr: $crate::__core::mem::ManuallyDrop::into_inner(unsafe {
-                Transmuter {
+                __Transmuter {
                     init_uninit_array: $crate::__core::mem::ManuallyDrop::new($crate::__core::mem::MaybeUninit::uninit()),
                 }
                 .uninit_array
@@ -146,13 +150,13 @@ macro_rules! array {
             vec.0.len += 1;
         }
         let inner = $crate::__core::mem::ManuallyDrop::into_inner(unsafe {
-            Transmuter {
+            __ArrayVecTransmuter {
                 vec: $crate::__core::mem::ManuallyDrop::new(vec),
             }
             .inner
         });
         $crate::__core::mem::ManuallyDrop::into_inner(unsafe {
-            Transmuter {
+            __Transmuter {
                 uninit_array: $crate::__core::mem::ManuallyDrop::new(inner.arr),
             }
             .out
