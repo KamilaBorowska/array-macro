@@ -3,11 +3,15 @@
 #[macro_use]
 extern crate array_macro;
 
+use std::cell::Cell;
 use std::convert::TryFrom;
 use std::fmt::Debug;
+use std::future::{pending, Future};
 use std::num::TryFromIntError;
 use std::panic::catch_unwind;
+use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed};
+use std::task::{Context, Poll};
 
 #[test]
 fn simple_array() {
@@ -156,4 +160,32 @@ fn const_array() {
 async fn await_array() {
     let array = array![async { 42 }.await; 3];
     assert_eq!(array, [42, 42, 42]);
+}
+
+#[tokio::test]
+async fn cancel_in_middle() {
+    struct ImmediatePoll<F>(F);
+    impl<F> Future for ImmediatePoll<F>
+    where
+        F: Future + Unpin,
+    {
+        type Output = ();
+        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            assert!(Pin::new(&mut self.0).poll(cx).is_pending());
+            Poll::Ready(())
+        }
+    }
+
+    let allocated = Cell::new(false);
+    let fut = async {
+        array![x => if x == 3 {
+            pending().await
+        } else {
+            allocated.set(true);
+            String::from("Allocation")
+        }; 4]
+    };
+    tokio::pin!(fut);
+    ImmediatePoll(fut).await;
+    assert!(allocated.get());
 }
