@@ -113,6 +113,7 @@ macro_rules! array {
             token: $crate::Token,
         }
 
+        #[repr(C)]
         union Transmuter<T> {
             init_uninit_array: $crate::__core::mem::ManuallyDrop<$crate::__core::mem::MaybeUninit<[T; __COUNT]>>,
             uninit_array: $crate::__core::mem::ManuallyDrop<[$crate::__core::mem::MaybeUninit<T>; __COUNT]>,
