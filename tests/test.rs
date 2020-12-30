@@ -10,6 +10,7 @@ use std::panic::catch_unwind;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed};
 use std::task::{Context, Poll};
+use tokio::task::JoinError;
 
 #[test]
 fn simple_array() {
@@ -186,4 +187,12 @@ async fn cancel_in_middle() {
     tokio::pin!(fut);
     ImmediatePoll(fut).await;
     assert!(allocated.get());
+}
+
+#[tokio::test]
+async fn async_send_sync() {
+    fn ret_fut() -> impl Future<Output = [(); 4]> + Send + Sync {
+        async { array![_ => async { }.await; 4] }
+    }
+    assert_eq!(ret_fut().await, [(); 4]);
 }
