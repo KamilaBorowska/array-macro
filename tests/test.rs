@@ -33,7 +33,7 @@ fn outer_scope() {
 fn mutability() {
     let mut x = 1;
     assert_eq!(
-        array![{
+        array![_ => {
             x += 1;
             x
         }; 3],
@@ -73,7 +73,7 @@ fn panic_safety() {
     fn panicky() -> DontDrop {
         panic!();
     }
-    assert!(catch_unwind(|| array![panicky(); 2]).is_err());
+    assert!(catch_unwind(|| array![_ => panicky(); 2]).is_err());
     assert_eq!(CALLED_DROP.load(Relaxed), false);
 }
 
@@ -100,7 +100,7 @@ fn panic_safety_part_two() {
 #[test]
 fn array_of_void() {
     fn internal<T: Debug + Eq>(f: fn() -> T) {
-        let a: [T; 0] = array![f(); 0];
+        let a: [T; 0] = array![_ => f(); 0];
         assert_eq!(a, []);
     }
     internal(|| -> ! { panic!("This function shouldn't be called") });
@@ -110,7 +110,7 @@ fn array_of_void() {
 #[test]
 fn array_of_void_panic_safety() {
     fn internal<T: Debug + Eq>(f: fn() -> T) {
-        let _a: [T; 1] = array![f(); 1];
+        let _a: [T; 1] = array![_ => f(); 1];
     }
     internal(|| -> ! { panic!() });
 }
@@ -152,7 +152,7 @@ fn const_array() {
     const fn const_fn() -> u32 {
         0
     }
-    const ARRAY: [u32; 4] = array![const_fn(); 4];
+    const ARRAY: [u32; 4] = array![_ => const_fn(); 4];
     assert_eq!(ARRAY, [0; 4]);
 }
 

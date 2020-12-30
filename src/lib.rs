@@ -54,9 +54,10 @@ impl Token {
 /// ```
 #[macro_export]
 macro_rules! array {
-    [$expr:expr; $count:expr] => {
-        $crate::array![_ => $expr; $count]
-    };
+    [$expr:expr; $count:expr] => {{
+        let value = $expr;
+        $crate::array![_ => $crate::__core::clone::Clone::clone(&value); $count]
+    }};
     [$i:pat => $e:expr; $count:expr] => {{
         const __COUNT: $crate::__core::primitive::usize = $count;
 
