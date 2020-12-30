@@ -1,8 +1,6 @@
 #![forbid(unsafe_code)]
 
-#[macro_use]
-extern crate array_macro;
-
+use array_macro::array;
 use std::cell::Cell;
 use std::convert::TryFrom;
 use std::fmt::Debug;
