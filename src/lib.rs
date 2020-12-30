@@ -28,6 +28,7 @@ pub struct Token;
 
 impl Token {
     #[doc(hidden)]
+    #[inline]
     pub const unsafe fn new() -> Self {
         Token
     }
