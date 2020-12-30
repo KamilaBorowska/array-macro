@@ -66,6 +66,27 @@ impl Token {
 ///   const ARRAY: [String; 3] = array![_ => String::new(); 3];
 ///   assert_eq!(ARRAY, ["", "", ""]);
 ///   ```
+///
+/// # Limitations
+///
+/// When using a form with provided index it's not possible to use `break`
+/// or `continue` without providing a label. This won't compile.
+///
+/// ```compile_fail
+/// use array_macro::array;
+/// loop {
+///     array![_ => break; 1];
+/// }
+/// ```
+///
+/// To work-around this issue you can provide a label.
+///
+/// ```
+/// use array_macro::array;
+/// 'label: loop {
+///     array![_ => break 'label; 1];
+/// }
+/// ```
 #[macro_export]
 macro_rules! array {
     [$expr:expr; $count:expr] => {{
