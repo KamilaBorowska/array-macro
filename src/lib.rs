@@ -101,12 +101,15 @@ macro_rules! array {
 
         impl<T> $crate::__core::ops::Drop for __ArrayVec<T> {
             fn drop(&mut self) {
+                // This is safe as arr[..len] is initialized due to
+                // __ArrayVecInner's type invariant.
                 for val in &mut self.0.arr[..self.0.len] {
                     unsafe { val.as_mut_ptr().drop_in_place() }
                 }
             }
         }
 
+        // Type invariant: arr[..len] must be initialized
         struct __ArrayVecInner<T> {
             arr: [$crate::__core::mem::MaybeUninit<T>; __COUNT],
             len: $crate::__core::primitive::usize,
@@ -127,15 +130,23 @@ macro_rules! array {
         }
 
         let mut vec = __ArrayVec(__ArrayVecInner {
+            // An uninitialized `[MaybeUninit<_>; LEN]` is valid.
             arr: $crate::__core::mem::ManuallyDrop::into_inner(unsafe {
                 __Transmuter {
                     init_uninit_array: $crate::__core::mem::ManuallyDrop::new($crate::__core::mem::MaybeUninit::uninit()),
                 }
                 .uninit_array
             }),
+            // Setting len to  0 is safe. Type requires that arr[..len] is initialized.
+            // For 0, this is arr[..0] which is an empty array which is always initialized.
             len: 0,
+            // This is an unsafe token that is a promise that we will follow type
+            // invariant. It needs to exist as __ArrayVec is accessible for macro
+            // callers, and we don't want them to cause UB if they go out of the way
+            // to create new instances of this type.
             token: unsafe { $crate::Token::new() },
         });
+        // Loop invariant: vec.0.arr[..vec.0.len] is valid
         while vec.0.len < __COUNT {
             let $i = vec.0.len;
             let _please_do_not_use_continue_without_label;
@@ -143,18 +154,29 @@ macro_rules! array {
             struct __PleaseDoNotUseBreakWithoutLabel;
             loop {
                 _please_do_not_use_continue_without_label = ();
-                value = $crate::__core::mem::MaybeUninit::new($e);
+                value = $e;
                 break __PleaseDoNotUseBreakWithoutLabel;
             };
-            vec.0.arr[vec.0.len] = value;
+            // This writes an initialized element.
+            vec.0.arr[vec.0.len] = $crate::__core::mem::MaybeUninit::new(value);
+            // We just wrote a valid element, so we can add 1 to len, it's valid.
             vec.0.len += 1;
         }
+        // When leaving this loop, vec.0.len must equal to __COUNT due
+        // to loop condition. It cannot be more as len is increased by 1
+        // every time loop is iterated on, and __COUNT never changes.
+
+        // __ArrayVec is representation compatible with __ArrayVecInner
+        // due to #[repr(transparent)] in __ArrayVec.
         let inner = $crate::__core::mem::ManuallyDrop::into_inner(unsafe {
             __ArrayVecTransmuter {
                 vec: $crate::__core::mem::ManuallyDrop::new(vec),
             }
             .inner
         });
+        // At this point the array is fully initialized, as vec.0.len == __COUNT,
+        // so converting an array of potentially uninitialized elements into fully
+        // initialized array is safe.
         $crate::__core::mem::ManuallyDrop::into_inner(unsafe {
             __Transmuter {
                 uninit_array: $crate::__core::mem::ManuallyDrop::new(inner.arr),
