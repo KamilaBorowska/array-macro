@@ -3,9 +3,15 @@
 #[macro_use]
 extern crate array_macro;
 
+use std::cell::Cell;
+use std::convert::TryFrom;
 use std::fmt::Debug;
+use std::future::{pending, Future};
+use std::num::TryFromIntError;
 use std::panic::catch_unwind;
+use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed};
+use std::task::{Context, Poll};
 
 #[test]
 fn simple_array() {
@@ -14,7 +20,7 @@ fn simple_array() {
 
 #[test]
 fn callback_array() {
-    assert_eq!(array![|x| x * 2; 3], [0, 2, 4]);
+    assert_eq!(array![x => x * 2; 3], [0, 2, 4]);
 }
 
 #[test]
@@ -27,7 +33,7 @@ fn outer_scope() {
 fn mutability() {
     let mut x = 1;
     assert_eq!(
-        array![|_| {
+        array![{
             x += 1;
             x
         }; 3],
@@ -43,7 +49,7 @@ fn big_array() {
 #[test]
 fn macro_within_macro() {
     assert_eq!(
-        array![|x| array![|y| (x, y); 2]; 3],
+        array![x => array![y => (x, y); 2]; 3],
         [[(0, 0), (0, 1)], [(1, 0), (1, 1)], [(2, 0), (2, 1)]]
     );
 }
@@ -51,7 +57,7 @@ fn macro_within_macro() {
 #[test]
 fn const_expr() {
     const TWO: usize = 2;
-    assert_eq!(array![|i| i; 2 + TWO], [0, 1, 2, 3]);
+    assert_eq!(array![i => i; 2 + TWO], [0, 1, 2, 3]);
 }
 
 #[test]
@@ -87,7 +93,7 @@ fn panic_safety_part_two() {
         }
         DropOnlyThrice
     }
-    assert!(catch_unwind(|| array![|i| panicky(i); 555]).is_err());
+    assert!(catch_unwind(|| array![i => panicky(i); 555]).is_err());
     assert_eq!(DROP_COUNT.load(Relaxed), 3);
 }
 
@@ -97,7 +103,7 @@ fn array_of_void() {
         let a: [T; 0] = array![f(); 0];
         assert_eq!(a, []);
     }
-    internal(|| -> ! { loop {} });
+    internal(|| -> ! { panic!("This function shouldn't be called") });
 }
 
 #[should_panic]
@@ -120,4 +126,66 @@ fn malicious_length() {
         }
     }
     assert_eq!(array![1; 3], [1, 1, 1]);
+}
+
+#[test]
+fn return_in_array() {
+    assert_eq!(
+        (|| {
+            array![x => if x == 1 { return 42 } else { String::from("Allocation") }; 4];
+            unreachable!();
+        })(),
+        42,
+    );
+}
+
+#[test]
+fn question_mark() {
+    assert!((|| -> Result<[String; 129], TryFromIntError> {
+        Ok(array![x => i8::try_from(x)?.to_string(); 129])
+    })()
+    .is_err())
+}
+
+#[test]
+fn const_array() {
+    const fn const_fn() -> u32 {
+        0
+    }
+    const ARRAY: [u32; 4] = array![const_fn(); 4];
+    assert_eq!(ARRAY, [0; 4]);
+}
+
+#[tokio::test]
+async fn await_array() {
+    let array = array![async { 42 }.await; 3];
+    assert_eq!(array, [42, 42, 42]);
+}
+
+#[tokio::test]
+async fn cancel_in_middle() {
+    struct ImmediatePoll<F>(F);
+    impl<F> Future for ImmediatePoll<F>
+    where
+        F: Future + Unpin,
+    {
+        type Output = ();
+        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            assert!(Pin::new(&mut self.0).poll(cx).is_pending());
+            Poll::Ready(())
+        }
+    }
+
+    let allocated = Cell::new(false);
+    let fut = async {
+        array![x => if x == 3 {
+            pending().await
+        } else {
+            allocated.set(true);
+            String::from("Allocation")
+        }; 4]
+    };
+    tokio::pin!(fut);
+    ImmediatePoll(fut).await;
+    assert!(allocated.get());
 }

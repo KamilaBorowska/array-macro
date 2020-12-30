@@ -11,7 +11,7 @@
 //! # extern crate array_macro;
 //! # fn main() {
 //! assert_eq!(array![String::from("x"); 2], [String::from("x"), String::from("x")]);
-//! assert_eq!(array![|x| x; 3], [0, 1, 2]);
+//! assert_eq!(array![x => x; 3], [0, 1, 2]);
 //! # }
 //! ```
 
@@ -20,36 +20,16 @@
 #[doc(hidden)]
 pub extern crate core as __core;
 
-#[allow(unused_imports)]
-use core::mem::MaybeUninit; // Rust 1.36+ required
-
+// This Token exists to prevent macro users from constructing their own
+// __ArrayVec objects which have Drop implementation that could cause UB.
 #[doc(hidden)]
-pub struct __ArrayVec<T> {
-    start: *mut T,
-    length: usize,
-}
+#[non_exhaustive]
+pub struct Token;
 
-impl<T> __ArrayVec<T> {
-    pub fn new(start: *mut T) -> Self {
-        Self { start, length: 0 }
-    }
-
-    pub fn start(&self) -> *mut T {
-        self.start
-    }
-
-    pub fn length(&mut self) -> *mut usize {
-        &mut self.length
-    }
-}
-
-impl<T> Drop for __ArrayVec<T> {
-    fn drop(&mut self) {
-        for i in 0..self.length {
-            unsafe {
-                core::ptr::drop_in_place(self.start.add(i));
-            }
-        }
+impl Token {
+    #[doc(hidden)]
+    pub const unsafe fn new() -> Self {
+        Token
     }
 }
 
@@ -58,9 +38,8 @@ impl<T> Drop for __ArrayVec<T> {
 /// This macro provides a way to repeat the same macro element multiple times
 /// without requiring `Copy` implementation.
 ///
-/// It's possible to define a callback by starting expression with `|` or `move`. As
-/// every closure is it own unique type, it is not possible to have an array of
-/// closures, so this syntax was reused for creating arrays with known indexes.
+/// It's possible to define a callback by prefixing an expression with
+/// `ident =>`.
 ///
 /// # Examples
 ///
@@ -69,45 +48,76 @@ impl<T> Drop for __ArrayVec<T> {
 /// # extern crate array_macro;
 /// # fn main() {
 /// assert_eq!(array!["string"; 3], ["string", "string", "string"]);
-/// assert_eq!(array![|x| x; 3], [0, 1, 2]);
+/// assert_eq!(array![x => x; 3], [0, 1, 2]);
 /// # }
 /// ```
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! array {
-    [@INTERNAL $callback:expr; $count:expr] => {{
-        const COUNT: usize = $count;
-        #[allow(unsafe_code)]
-        fn create_arr<T>(mut callback: impl FnMut(usize) -> T) -> [T; COUNT] {
-            let mut arr = $crate::__core::mem::MaybeUninit::uninit();
-            let mut vec = $crate::__ArrayVec::<T>::new((&mut arr).as_mut_ptr() as *mut T);
-            unsafe {
-                // Loop invariant: vec[..vec.length] is valid
-                for i in 0..COUNT {
-                    // On the first iteration the value of `i` is `0`, making this a no-op.
-                    //
-                    // We don't need to store length for the last iteration as `vec` is
-                    // forgotten after leaving this loop.
-                    //
-                    // The value is set before writing the value to avoid need to perform
-                    // addition by 1.
-                    *(&mut vec).length() = i;
-                    $crate::__core::ptr::write((&vec).start().add(i), callback(i));
+    [$expr:expr; $count:expr] => {
+        $crate::array![_ => $expr; $count]
+    };
+    [$i:pat => $e:expr; $count:expr] => {{
+        const __COUNT: $crate::__core::primitive::usize = $count;
+
+        #[repr(transparent)]
+        struct __ArrayVec<T>(__ArrayVecInner<T>);
+
+        impl<T> $crate::__core::ops::Drop for __ArrayVec<T> {
+            fn drop(&mut self) {
+                for val in &mut self.0.arr[..self.0.len] {
+                    unsafe { val.as_mut_ptr().drop_in_place() }
                 }
-                // Loop escaped without panicking, avoid dropping elements.
-                $crate::__core::mem::forget(vec);
-                // All elements were written, assuming array is valid.
-                arr.assume_init()
             }
         }
-        create_arr($callback)
+
+        struct __ArrayVecInner<T> {
+            arr: [$crate::__core::mem::MaybeUninit<T>; __COUNT],
+            len: $crate::__core::primitive::usize,
+            token: $crate::Token,
+        }
+
+        union Transmuter<T> {
+            init_uninit_array: $crate::__core::mem::ManuallyDrop<$crate::__core::mem::MaybeUninit<[T; __COUNT]>>,
+            uninit_array: $crate::__core::mem::ManuallyDrop<[$crate::__core::mem::MaybeUninit<T>; __COUNT]>,
+            vec: $crate::__core::mem::ManuallyDrop<__ArrayVec<T>>,
+            inner: $crate::__core::mem::ManuallyDrop<__ArrayVecInner<T>>,
+            out: $crate::__core::mem::ManuallyDrop<[T; __COUNT]>,
+        }
+
+        let mut vec = __ArrayVec(__ArrayVecInner {
+            arr: $crate::__core::mem::ManuallyDrop::into_inner(unsafe {
+                Transmuter {
+                    init_uninit_array: $crate::__core::mem::ManuallyDrop::new($crate::__core::mem::MaybeUninit::uninit()),
+                }
+                .uninit_array
+            }),
+            len: 0,
+            token: unsafe { $crate::Token::new() },
+        });
+        while vec.0.len < __COUNT {
+            let $i = vec.0.len;
+            let _please_do_not_use_continue_without_label;
+            let value;
+            struct __PleaseDoNotUseBreakWithoutLabel;
+            loop {
+                _please_do_not_use_continue_without_label = ();
+                value = $crate::__core::mem::MaybeUninit::new($e);
+                break __PleaseDoNotUseBreakWithoutLabel;
+            };
+            vec.0.arr[vec.0.len] = value;
+            vec.0.len += 1;
+        }
+        let inner = $crate::__core::mem::ManuallyDrop::into_inner(unsafe {
+            Transmuter {
+                vec: $crate::__core::mem::ManuallyDrop::new(vec),
+            }
+            .inner
+        });
+        $crate::__core::mem::ManuallyDrop::into_inner(unsafe {
+            Transmuter {
+                uninit_array: $crate::__core::mem::ManuallyDrop::new(inner.arr),
+            }
+            .out
+        })
     }};
-    [| $($rest:tt)*] => {
-        array![@INTERNAL | $($rest)*]
-    };
-    [move $($rest:tt)*] => {
-        array![@INTERNAL move $($rest)*]
-    };
-    [$expr:expr; $count:expr] => {
-        array![|_| $expr; $count]
-    };
 }
