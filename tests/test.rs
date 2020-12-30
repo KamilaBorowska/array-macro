@@ -103,7 +103,7 @@ fn array_of_void() {
         let a: [T; 0] = array![f(); 0];
         assert_eq!(a, []);
     }
-    internal(|| -> ! { loop {} });
+    internal(|| -> ! { panic!("This function shouldn't be called") });
 }
 
 #[should_panic]
