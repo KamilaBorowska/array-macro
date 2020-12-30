@@ -10,7 +10,6 @@ use std::panic::catch_unwind;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed};
 use std::task::{Context, Poll};
-use tokio::task::JoinError;
 
 #[test]
 fn simple_array() {
