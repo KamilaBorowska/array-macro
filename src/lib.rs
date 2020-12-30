@@ -146,7 +146,6 @@ macro_rules! array {
             // to create new instances of this type.
             token: unsafe { $crate::Token::new() },
         });
-        // Loop invariant: vec.0.arr[..vec.0.len] is valid
         while vec.0.len < __COUNT {
             let $i = vec.0.len;
             let _please_do_not_use_continue_without_label;
