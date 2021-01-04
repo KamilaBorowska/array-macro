@@ -1,7 +1,15 @@
-test:beta:
+test:stable:
   script: &test_script
   - rustc --version && cargo --version
   - cargo test --all --verbose
+  image: rust
+
+test:1.49:
+  script: *test_script
+  image: rust:1.49
+
+test:beta:
+  script: *test_script
   image: liuchong/rustup:beta
 
 test:nightly:
