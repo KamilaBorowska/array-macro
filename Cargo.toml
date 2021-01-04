@@ -10,6 +10,12 @@ keywords = ["data-structure", "no_std", "array"]
 categories = ["data-structures", "no-std"]
 documentation = "https://docs.rs/array-macro"
 
+[features]
+const-generics = []
+
+[dependencies]
+cfg-if = "1.0.0"
+
 [dev-dependencies]
 tokio = { version = "1.0.1", features = ["macros", "rt"] }
 
