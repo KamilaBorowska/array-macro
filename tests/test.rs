@@ -195,3 +195,17 @@ async fn async_send_sync() {
     }
     assert_eq!(ret_fut().await, [(); 4]);
 }
+
+#[cfg(feature = "const-generics")]
+#[test]
+fn const_generics() {
+    fn array<const N: usize>() -> [u8; N] {
+        array![0; N]
+    }
+    fn array_pos<const N: usize>() -> [usize; N] {
+        array![x => x; N]
+    }
+    assert_eq!(array(), [0, 0, 0]);
+    assert_eq!(array(), [0, 0, 0, 0, 0]);
+    assert_eq!(array_pos(), [0, 1, 2, 3, 4, 5, 6]);
+}
