@@ -87,6 +87,7 @@ macro_rules! array {
 cfg_if::cfg_if! {
     if #[cfg(feature = "const-generics")] {
         use core::mem::{MaybeUninit, ManuallyDrop};
+        use core::ptr;
 
         #[doc(hidden)]
         #[repr(transparent)]
@@ -96,9 +97,8 @@ cfg_if::cfg_if! {
             fn drop(&mut self) {
                 // This is safe as arr[..len] is initialized due to
                 // __ArrayVecInner's type invariant.
-                for val in &mut self.0.arr[..self.0.len] {
-                    unsafe { val.as_mut_ptr().drop_in_place() }
-                }
+                let initialized = &mut self.0.arr[..self.0.len] as *mut _ as *mut [T];
+                unsafe { ptr::drop_in_place(initialized) };
             }
         }
 
@@ -210,9 +210,8 @@ cfg_if::cfg_if! {
                     fn drop(&mut self) {
                         // This is safe as arr[..len] is initialized due to
                         // __ArrayVecInner's type invariant.
-                        for val in &mut self.0.arr[..self.0.len] {
-                            unsafe { val.as_mut_ptr().drop_in_place() }
-                        }
+                        let initialized = &mut self.0.arr[..self.0.len] as *mut _ as *mut [T];
+                        unsafe { $crate::__core::ptr::drop_in_place(initialized) };
                     }
                 }
 
