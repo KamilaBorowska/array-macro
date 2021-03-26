@@ -109,6 +109,7 @@ pub struct __ArrayVecInner<T, const N: usize> {
 }
 
 impl<T, const N: usize> __ArrayVecInner<T, N> {
+    #[doc(hidden)]
     pub const unsafe fn new(arr: [MaybeUninit<T>; N]) -> Self {
         Self { arr, len: 0 }
     }
