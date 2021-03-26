@@ -102,19 +102,15 @@ impl<T, const N: usize> Drop for __ArrayVec<T, N> {
 
 // Type invariant: arr[..len] must be initialized
 #[doc(hidden)]
+#[non_exhaustive]
 pub struct __ArrayVecInner<T, const N: usize> {
     pub arr: [MaybeUninit<T>; N],
     pub len: usize,
-    _token: (),
 }
 
 impl<T, const N: usize> __ArrayVecInner<T, N> {
     pub const unsafe fn new(arr: [MaybeUninit<T>; N]) -> Self {
-        Self {
-            arr,
-            len: 0,
-            _token: (),
-        }
+        Self { arr, len: 0 }
     }
 }
 
