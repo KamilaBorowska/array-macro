@@ -196,7 +196,6 @@ async fn async_send_sync() {
     assert_eq!(ret_fut().await, [(); 4]);
 }
 
-#[cfg(feature = "const-generics")]
 #[test]
 fn const_generics() {
     fn array<const N: usize>() -> [u8; N] {

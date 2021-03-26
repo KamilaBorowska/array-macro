@@ -4,9 +4,9 @@ test:stable:
   - cargo test --verbose
   image: rust
 
-test:1.49:
+test:1.51:
   script: *test_script
-  image: rust:1.49
+  image: rust:1.51
 
 test:beta:
   script: *test_script
@@ -14,10 +14,4 @@ test:beta:
 
 test:nightly:
   script: *test_script
-  image: rustlang/rust:nightly
-
-test:nightly:const-generics:
-  script:
-  - rustc --version && cargo --version
-  - cargo test --all-features --verbose
   image: rustlang/rust:nightly
