@@ -208,3 +208,12 @@ fn const_generics() {
     assert_eq!(array(), [0, 0, 0, 0, 0]);
     assert_eq!(array_pos(), [0, 1, 2, 3, 4, 5, 6]);
 }
+
+#[test]
+fn generic_const_array() {
+    const fn get_array<T>() -> [Option<T>; 3] {
+        array![_ => None; 3]
+    }
+    const ARRAY: [Option<String>; 3] = get_array();
+    assert_eq!(ARRAY, [None, None, None]);
+}
