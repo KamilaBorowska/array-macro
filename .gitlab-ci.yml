@@ -8,10 +8,6 @@ test:1.51:
   script: *test_script
   image: rust:1.51
 
-test:beta:
-  script: *test_script
-  image: liuchong/rustup:beta
-
 test:nightly:
   script: *test_script
   image: rustlang/rust:nightly
