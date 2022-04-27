@@ -217,3 +217,13 @@ fn generic_const_array() {
     const ARRAY: [Option<String>; 3] = get_array();
     assert_eq!(ARRAY, [None, None, None]);
 }
+
+#[test]
+fn impure_count() {
+    array![String::from("Hello, world!"); impure_proc_macro::count!()];
+}
+
+#[test]
+fn impure_count_backwards() {
+    array![String::from("Hello, world!"); impure_proc_macro::count_backwards!()];
+}
