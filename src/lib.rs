@@ -106,15 +106,34 @@ impl<T, const N: usize> Drop for __ArrayVec<T, N> {
 pub struct __ArrayVecInner<T, const N: usize> {
     pub arr: [MaybeUninit<T>; N],
     pub len: usize,
+    // This field exists so that array! macro could retrieve the value of N.
+    // The method to retrieve N cannot be directly on __ArrayVecInner as
+    // borrowing it could cause a reference to interior mutable data to
+    // be created which is not allowed in `const fn`.
+    //
+    // Because this field doesn't actually store anything it's not possible
+    // to replace it in an already existing instance of __ArrayVecInner.
+    pub capacity: __Capacity<N>,
 }
 
 impl<T, const N: usize> __ArrayVecInner<T, N> {
     #[doc(hidden)]
     pub const unsafe fn new(arr: [MaybeUninit<T>; N]) -> Self {
-        Self { arr, len: 0 }
+        Self {
+            arr,
+            len: 0,
+            capacity: __Capacity,
+        }
     }
 }
 
+pub struct __Capacity<const N: usize>;
+
+impl<const N: usize> __Capacity<N> {
+    pub const fn get(&self) -> usize {
+        N
+    }
+}
 #[doc(hidden)]
 #[repr(C)]
 pub union __Transmuter<T, const N: usize> {
@@ -143,7 +162,7 @@ macro_rules! __array {
                 .uninit_array
             }),
         )});
-        while vec.0.len < $count {
+        while vec.0.len < (&vec.0.capacity).get() {
             let $i = vec.0.len;
             let _please_do_not_use_continue_without_label;
             let value;
