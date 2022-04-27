@@ -127,6 +127,7 @@ impl<T, const N: usize> __ArrayVecInner<T, N> {
     }
 }
 
+#[doc(hidden)]
 pub struct __Capacity<const N: usize>;
 
 impl<const N: usize> __Capacity<N> {
