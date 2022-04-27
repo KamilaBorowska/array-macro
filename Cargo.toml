@@ -1,6 +1,6 @@
 [package]
 name = "array-macro"
-version = "2.1.2"
+version = "2.1.3"
 edition = "2018"
 authors = ["Konrad Borowski <konrad@borowski.pw>"]
 repository = "https://gitlab.com/KonradBorowski/array-macro"
