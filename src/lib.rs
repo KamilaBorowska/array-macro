@@ -16,6 +16,7 @@
 //! ```
 
 #![no_std]
+#![deny(missing_docs)]
 
 #[doc(hidden)]
 pub extern crate core as __core;
