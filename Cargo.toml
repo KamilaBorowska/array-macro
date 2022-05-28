@@ -2,6 +2,7 @@
 name = "array-macro"
 version = "2.1.3"
 edition = "2018"
+rust-version = "1.51"
 authors = ["Konrad Borowski <konrad@borowski.pw>"]
 repository = "https://github.com/xfix/array-macro"
 license = "MIT OR Apache-2.0"
