@@ -16,5 +16,4 @@ impure-proc-macro = { path = "impure-proc-macro" }
 tokio = { version = "1.0.1", features = ["macros", "rt"] }
 
 [badges]
-gitlab = { repository = "KonradBorowski/array-macro" }
 maintenance = { status = "actively-developed" }
