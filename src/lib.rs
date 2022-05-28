@@ -132,6 +132,7 @@ impl<T, const N: usize> __ArrayVecInner<T, N> {
 pub struct __Capacity<const N: usize>;
 
 impl<const N: usize> __Capacity<N> {
+    #[doc(hidden)]
     pub const fn get(&self) -> usize {
         N
     }
