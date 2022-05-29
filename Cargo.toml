@@ -1,6 +1,6 @@
 [package]
 name = "array-macro"
-version = "2.1.3"
+version = "2.1.4"
 edition = "2018"
 rust-version = "1.56"
 authors = ["Konrad Borowski <konrad@borowski.pw>"]
